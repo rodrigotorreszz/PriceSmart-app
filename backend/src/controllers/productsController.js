@@ -10,15 +10,15 @@ productsController.getProducts = async (req, res) => {
 
 // INSERT
 productsController.createProducts = async (req, res) => {
-  const { name, description, price } = req.body;
-  const newProduct = new productsModel({ name, description, price});
+  const { name, description, price, stock } = req.body; // ✅ incluyo stock
+  const newProduct = new productsModel({ name, description, price, stock });
   await newProduct.save();
   res.json({ message: "product saved" });
 };
 
 // DELETE
 productsController.deleteProducts = async (req, res) => {
-  const deletedProduct = await productsModel.findByIdAndDelete(req.params.Id);
+  const deletedProduct = await productsModel.findByIdAndDelete(req.params.id); // ⚡ ojo: id minúscula
   if (!deletedProduct) {
     return res.status(404).json({ message: "Producto no encontrado" });
   }
@@ -27,23 +27,26 @@ productsController.deleteProducts = async (req, res) => {
 
 // UPDATE
 productsController.updateProducts = async (req, res) => {
-  // Solicito todos los valores
-  const { name, description, price } = req.body;
-  // Actualizo
-  await productsModel.findByIdAndUpdate(
-    req.params.id,
-    {
-      name,
-      description,
-      price,
-      stock,
-    },
-    { new: true }
-  );
-  // muestro un mensaje que todo se actualizo
-  res.json({ message: "product updated" });
+  try {
+    const { name, description, price, stock } = req.body; // ✅ incluyo stock
+
+    const updatedProduct = await productsModel.findByIdAndUpdate(
+      req.params.id,
+      { name, description, price, stock },
+      { new: true }
+    );
+
+    if (!updatedProduct) {
+      return res.status(404).json({ message: "Producto no encontrado" });
+    }
+
+    res.json({ message: "product updated", product: updatedProduct });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
+// SELECT ONE
 productsController.getSingleProduct = async (req, res) => {
   const product = await productsModel.findById(req.params.id);
   if (!product) {
